@@ -10,79 +10,157 @@ import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    @State private var selectedTab = 0
+    @State var toggleOn =  false
+ 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
-                    }
+        TabView(selection: $selectedTab) {
+                    HomeView()
+                        .tabItem {
+                            Image(systemName: "house")
+                            Text("Главная")
+                        }
+                        .tag(0)
+            
+            TripsView()
+                .tabItem {
+                    Image(systemName: "car")
+                    Text("Поездки")
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                .tag(1)
+            
+            SearchView()
+                .tabItem {
+                    Image(systemName: "magnifyingglass")
+                    Text("Поиск")
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+                .tag(2)
+            
+            HelpView()
+                .tabItem {
+                    Image(systemName: "questionmark.circle")
+                    Text("Помощь")
                 }
-            }
-            Text("Select an item")
+                .tag(3)
+            
+            ProfileView()
+                .tabItem {
+                    Image(systemName: "person.circle")
+                    Text("Профиль")
+                }
+                .tag(4)
+                }
         }
+}
+
+struct ModalSearchView: View {
+    
+    @State private var searchText = ""
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+               Text("From")
+                   .font(.title)
+                   .fontWeight(.bold)
+                   .frame(maxWidth: .infinity, alignment: .center)
+
+               HStack {
+                   Image(systemName: "magnifyingglass")
+                   TextField("Press to search", text: $searchText)
+               }
+               .padding()
+               .background(Color.gray.opacity(0.2))
+               .cornerRadius(10)
+               .padding(.horizontal)
+
+               HStack {
+                   Text("Before")
+                       .font(.headline)
+                       .fontWeight(.semibold)
+                       .padding(.leading)
+
+                   Spacer()
+
+                   VStack(alignment: .leading) {
+                       Text("Item 1")
+                       Text("Item 2")
+                   }
+                   .padding()
+                   .background(Color.gray.opacity(0.2))
+                   .cornerRadius(10)
+               }
+               .padding()
+               .background(Color.gray.opacity(0.2))
+               .cornerRadius(10)
+               .padding(.horizontal)
+           }
+           .padding()
+       }
+}
+
+struct TripsView: View {
+    var body: some View {
+        Text("hi")
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+}
+struct SearchView: View {
+    var body: some View {
+        VStack {
+            Text("Help")
+                .font(.title)
+            Spacer()
         }
     }
 }
+struct HelpView: View {
+    var body: some View {
+        VStack {
+            Text("Help")
+                .font(.title)
+            Spacer()
+        }
+    }
+}
+struct ProfileView: View {
+    var body: some View {
+        VStack {
+            Text("Help")
+                .font(.title)
+            Spacer()
+        }
+    }
+}
+struct ImageToggleStyle: ToggleStyle {
+    
+    var onImageName: String
+    var offImageName: String
+    
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            configuration.label
+            Spacer()
+            Image(configuration.isOn ? onImageName : offImageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 51, height: 31, alignment: .center)
+                .overlay(
+                    Circle()
+                        .foregroundColor(.white)
+                        .padding(.all, 3)
+                        .offset(x: configuration.isOn ? 11 : -11, y: 0)
+                        .animation(Animation.linear(duration: 0.1))
+                ).cornerRadius(20)
+                .onTapGesture { configuration.isOn.toggle() }
+        }
+        
+            
+    }
+}
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+extension UISegmentedControl {
+    override open func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        self.setContentHuggingPriority(.defaultLow, for: .vertical)  // << here !!
     }
 }
